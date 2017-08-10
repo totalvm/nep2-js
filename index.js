@@ -4,19 +4,18 @@ var bs58check = require('bs58check')
 var createHash = require('create-hash')
 var scrypt = require('scryptsy')
 var xor = require('buffer-xor')
-
 var ecurve = require('ecurve')
-var curve = ecurve.getCurveByName('secp256r1')
 
+const curve = ecurve.getCurveByName('secp256r1')
 var BigInteger = require('bigi')
 
 // constants
-var SCRYPT_PARAMS = {
+const SCRYPT_PARAMS = {
   N: 16384, // specified by NEP2
   r: 8,
   p: 8
 }
-var NULL = new Buffer(0)
+const NULL = new Buffer(0)
 
 function hash160 (buffer) {
   return createHash('rmd160').update(
@@ -30,7 +29,26 @@ function hash256 (buffer) {
   ).digest()
 }
 
-function getAddress (d) {
+function getAddress (privateKeyBuffer) {
+  // Generate public key
+  let Q = curve.G.multiply(privateKeyBuffer).getEncoded(true).toString('hex')
+  let pubKey = '21' + Q + 'ac'
+  // Add address version in front of hashed pubkey
+  let pubHash = '17' + hash160(pubKey)
+  // SHA256 2 times
+  const shaOutput = hash256(pubHash)
+
+  // Address = RIPEMD + SHA[0:4]
+  const shaChecksum = shaOutput.substring(0, 8)
+
+  // Construct 25 byte Address Buffer
+  let addrBuffer = new Uint8Array(25)
+  addrBuffer.set(pubHash, 0)
+  addrBuffer.set(shaChecksum, 21)
+  return bs58check.encode(addrBuffer)
+}
+
+/* function getAddress (d) {
   var Q = curve.G.multiply(d).getEncoded(false)
   var hash = hash160(Q)
   var payload = new Buffer(21)
@@ -39,6 +57,7 @@ function getAddress (d) {
 
   return bs58check.encode(payload)
 }
+ */
 
 function encryptRaw (buffer, passphrase, progressCallback, scryptParams) {
   if (buffer.length !== 32) throw new Error('Invalid private key length')

@@ -29,42 +29,29 @@ function hash256 (buffer) {
   ).digest()
 }
 
-function getAddress (privateKeyBuffer) {
-  // Generate public key
-  let Q = curve.G.multiply(privateKeyBuffer).getEncoded(true).toString('hex')
-  let pubKey = '21' + Q + 'ac'
-  // Add address version in front of hashed pubkey
-  let pubHash = '17' + hash160(pubKey)
-  // SHA256 2 times
-  const shaOutput = hash256(pubHash)
-
-  // Address = RIPEMD + SHA[0:4]
-  const shaChecksum = shaOutput.substring(0, 8)
-
+function getAddress (privateKey) {
+  let privateKeyBuffer = new BigInteger.fromHex(privateKey)
+  let Q = curve.G.multiply(privateKey).getEncoded(true).toString('hex')
+  let publickey = '21' + Q + 'ac'
+  let riphash = '17' + hash160(hash256(Buffer.fromHex(Q))).toString('hex')
+  let shahash = hash256(Buffer.fromHex(riphash)).toString('hex')
+  
+  let shaChecksum = toArrayBuffer(shahash.substring(0, 8))
+  // Construct RIPEMD buffer
+  const ripBuffer = toArrayBuffer(riphash)
   // Construct 25 byte Address Buffer
   let addrBuffer = new Uint8Array(25)
-  addrBuffer.set(pubHash, 0)
-  addrBuffer.set(shaChecksum, 21)
+  addrBuffer.set(ripBuffer,0)
+  addrBuffer.set(shaChecksum,21)
   return bs58check.encode(addrBuffer)
 }
 
-/* function getAddress (d) {
-  var Q = curve.G.multiply(d).getEncoded(false)
-  var hash = hash160(Q)
-  var payload = new Buffer(21)
-  payload.writeUInt8(0x00, 0)
-  hash.copy(payload, 1)
-
-  return bs58check.encode(payload)
-}
- */
 
 function encryptRaw (buffer, passphrase, progressCallback, scryptParams) {
   if (buffer.length !== 32) throw new Error('Invalid private key length')
   scryptParams = scryptParams || SCRYPT_PARAMS
 
-  var d = BigInteger.fromBuffer(buffer)
-  var address = getAddress(d)
+  var address = getAddress(buffer)
   var secret = new Buffer(passphrase, 'utf8')
   var salt = hash256(address).slice(0, 4)
 
@@ -130,8 +117,7 @@ function decryptRaw (buffer, passphrase, progressCallback, scryptParams) {
   var privateKey = xor(plainText, derivedHalf1)
 
   // verify salt matches address
-  var d = BigInteger.fromBuffer(privateKey)
-  var address = getAddress(d)
+  var address = getAddress(privateKey)
   var checksum = hash256(address).slice(0, 4)
   assert.deepEqual(salt, checksum)
 

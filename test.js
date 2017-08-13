@@ -7,4 +7,4 @@ var decode = wif.decode(priv)
 
 //console.log(nep.getAddress(decode))
 console.log(decode)
-console.log(nep.getAddress(decode.privateKey))
+console.log(nep.getAddress(decode))

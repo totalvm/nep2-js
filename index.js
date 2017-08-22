@@ -17,13 +17,13 @@ const SCRYPT_PARAMS = {
 }
 const NULL = new Buffer(0)
 
-function hash160(buffer) {
+function hash160 (buffer) {
   return createHash('rmd160').update(
     createHash('sha256').update(buffer).digest()
   ).digest()
 }
 
-function hash256(buffer) {
+function hash256 (buffer) {
   return createHash('sha256').update(
     createHash('sha256').update(buffer).digest()
   ).digest()
@@ -31,31 +31,31 @@ function hash256(buffer) {
 
 // Helper functions that I use
 const toHexString = function (arrayBuffer) {
-  let s = "";
+  let s = ''
   for (const i of arrayBuffer) {
-    s += (i >>> 4).toString(16);
-    s += (i & 0xf).toString(16);
+    s += (i >>> 4).toString(16)
+    s += (i & 0xf).toString(16)
   }
-  return s;
+  return s
 }
 
 // This actually returns a Uint8Array but it is functionally the same
-const toArrayBuffer = function(s) {
+const toArrayBuffer = function (s) {
   let result = []
-  for (let i=0;i < s.length;i+=2) {
-    result.push(parseInt(s.substring(i, i+2), 16))
+  for (let i = 0; i < s.length; i += 2) {
+    result.push(parseInt(s.substring(i, i + 2), 16))
   }
   return Uint8Array.from(result)
 }
 
 // Input is string, I added a check so that it can accept ArrayBuffers too
-function getAddress(privateKey) {
-  if (typeof (privateKey) !== "string") {
+function getAddress (privateKey) {
+  if (typeof (privateKey) !== 'string') {
     privateKey = toHexString(privateKey)
   }
-  let privateKeyBuffer = new BigInteger.fromHex(privateKey)
+  let privateKeyBuffer = BigInteger.fromHex(privateKey)
   let Q = curve.G.multiply(privateKeyBuffer).getEncoded(true).toString('hex')
-  let publickey = '21' + Q + 'ac'
+  // let publickey = '21' + Q + 'ac'
   // Correct method is Buffer.from(<string>, 'hex'). Take note that Buffer is a Nodejs native implementation
   let riphash = '17' + hash160(hash256(Buffer.from(Q, 'hex'))).toString('hex')
   let shahash = hash256(Buffer.from(riphash, 'hex')).toString('hex')
@@ -70,8 +70,7 @@ function getAddress(privateKey) {
   return bs58check.encode(addrBuffer)
 }
 
-
-function encryptRaw(buffer, passphrase, progressCallback, scryptParams) {
+function encryptRaw (buffer, passphrase, progressCallback, scryptParams) {
   if (buffer.length !== 32) throw new Error('Invalid private key length')
   scryptParams = scryptParams || SCRYPT_PARAMS
 
@@ -105,12 +104,12 @@ function encryptRaw(buffer, passphrase, progressCallback, scryptParams) {
   return result
 }
 
-function encrypt(buffer, passphrase, progressCallback, scryptParams) {
+function encrypt (buffer, passphrase, progressCallback, scryptParams) {
   return bs58check.encode(encryptRaw(buffer, passphrase, progressCallback, scryptParams))
 }
 
 // some of the techniques borrowed from: https://github.com/pointbiz/bitaddress.org
-function decryptRaw(buffer, passphrase, progressCallback, scryptParams) {
+function decryptRaw (buffer, passphrase, progressCallback, scryptParams) {
   // 39 bytes: 2 bytes prefix, 37 bytes payload
   if (buffer.length !== 39) throw new Error('Invalid NEP2 data length')
   if (buffer.readUInt8(0) !== 0x01) throw new Error('Invalid NEP2 prefix')
@@ -121,7 +120,7 @@ function decryptRaw(buffer, passphrase, progressCallback, scryptParams) {
 
   passphrase = new Buffer(passphrase, 'utf8')
 
-  var flagByte = buffer.readUInt8(2)
+  buffer.readUInt8(2) // Read flagbyte and discard
 
   var N = scryptParams.N
   var r = scryptParams.r
@@ -142,17 +141,17 @@ function decryptRaw(buffer, passphrase, progressCallback, scryptParams) {
 
   // verify salt matches address
   var address = getAddress(privateKey)
-  var checksum = hash256(address).slice(0, 4)
+  var checksum = hash256(Buffer.from(address,'hex')).slice(0, 4)
   assert.deepEqual(salt, checksum)
 
   return privateKey
 }
 
-function decrypt(string, passphrase, progressCallback, scryptParams) {
+function decrypt (string, passphrase, progressCallback, scryptParams) {
   return decryptRaw(bs58check.decode(string), passphrase, progressCallback, scryptParams)
 }
 
-function verify(string) {
+function verify (string) {
   var decoded = bs58check.decodeUnsafe(string)
   if (!decoded) return false
 

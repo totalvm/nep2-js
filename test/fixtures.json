@@ -2,9 +2,16 @@
   "valid": [
     {
       "passphrase": "TestingOneTwoThree",
-      "bip38": "6PRVWUbkzzsbcVac2qwfssoUJAN1Xhrg6bNk8J7Nzm5H7kxEbn2Nh2ZoGg",
-      "wif": "5KN7MzqK5wt2TP1fQCYyHBtDrXdJuXbUzm4A9rKAteGu3Qi5CVR",
-      "address": "1Jq6MksXQVWzrznvZzxkV6oY57oWXD9TXB",
+      "bip38": "6PYVPVe1fQznphjbUxXP9KZJqPMVnVwCx5s5pr5axRJ8uHkMtZg97eT5kL",
+      "wif": "L44B5gGEpqEDRS9vVPz7QT35jcBG2r3CZwSwQ4fCewXAhAhqGVpP",
+      "address": "AStZHy8E6StCqYQbzMqi4poH7YNDHQKxvt",
+      "description": "no EC multiply / no compression #1"
+    },
+    {
+      "passphrase": "Satoshi",
+      "bip38": "6PYN6mjwYfjPUuYT3Exajvx25UddFVLpCw4bMsmtLdnKwZ9t1Mi3CfKe8S",
+      "wif": "KwYgW8gcxj1JWJXhPSu4Fqwzfhp5Yfi42mdYmMa4XqK7NJxXUSK7",
+      "address": "AXoxAX2eJfJ1shNpWqUxRh3RWNUJqvQvVa",
       "description": "no EC multiply / no compression #1"
     }
   ],

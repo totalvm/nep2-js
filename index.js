@@ -29,7 +29,7 @@ function hash256 (buffer) {
   ).digest()
 }
 
-// Helper functions that I use
+// Helper function that I use
 const toHexString = function (arrayBuffer) {
   let s = ''
   for (const i of arrayBuffer) {
@@ -39,15 +39,6 @@ const toHexString = function (arrayBuffer) {
   return s
 }
 
-// This actually returns a Uint8Array but it is functionally the same
-const toArrayBuffer = function (s) {
-  let result = []
-  for (let i = 0; i < s.length; i += 2) {
-    result.push(parseInt(s.substring(i, i + 2), 16))
-  }
-  return Uint8Array.from(result)
-}
-
 // Input is string, I added a check so that it can accept ArrayBuffers too
 function getAddress (privateKey) {
   if (typeof (privateKey) !== 'string') {
@@ -55,27 +46,17 @@ function getAddress (privateKey) {
   }
   let privateKeyBuffer = BigInteger.fromHex(privateKey)
   let Q = curve.G.multiply(privateKeyBuffer).getEncoded(true).toString('hex')
-  // let publickey = '21' + Q + 'ac'
-  // Correct method is Buffer.from(<string>, 'hex'). Take note that Buffer is a Nodejs native implementation
-  let riphash = '17' + hash160(hash256(Buffer.from(Q, 'hex'))).toString('hex')
-  let shahash = hash256(Buffer.from(riphash, 'hex')).toString('hex')
-
-  let shaChecksum = toArrayBuffer(shahash.substring(0, 8))
-  // Construct RIPEMD buffer
-  const ripBuffer = toArrayBuffer(riphash)
-  // Construct 25 byte Address Buffer
-  let addrBuffer = new Uint8Array(25)
-  addrBuffer.set(ripBuffer, 0)
-  addrBuffer.set(shaChecksum, 21)
-  return bs58check.encode(addrBuffer)
+  Q = '21' + Q + 'ac'
+  let riphash = '17' + hash160(Buffer.from(Q, 'hex')).toString('hex')
+  return bs58check.encode(Buffer.from(riphash, 'hex'))
 }
 
 function encryptRaw (buffer, passphrase, progressCallback, scryptParams) {
   if (buffer.length !== 32) throw new Error('Invalid private key length')
   scryptParams = scryptParams || SCRYPT_PARAMS
-
-  var address = getAddress(buffer)
-  var secret = new Buffer(passphrase, 'utf8')
+  // Read address as ASCII format because Address is not a hexstring
+  var address = Buffer.from(getAddress(buffer), 'ascii')
+  var secret = Buffer.from(passphrase, 'utf8')
   var salt = hash256(address).slice(0, 4)
 
   var N = scryptParams.N
@@ -141,7 +122,7 @@ function decryptRaw (buffer, passphrase, progressCallback, scryptParams) {
 
   // verify salt matches address
   var address = getAddress(privateKey)
-  var checksum = hash256(Buffer.from(address,'hex')).slice(0, 4)
+  var checksum = hash256(Buffer.from(address, 'ascii')).slice(0, 4)
   assert.deepEqual(salt, checksum)
 
   return privateKey

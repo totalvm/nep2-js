@@ -153,5 +153,7 @@ module.exports = {
   getAddress: getAddress,
   decrypt: decrypt,
   encrypt: encrypt,
-  verify: verify
+  verify: verify,
+  decryptRaw: decryptRaw,
+  encryptRaw: encryptRaw
 }
